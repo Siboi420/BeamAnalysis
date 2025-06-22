@@ -206,8 +206,8 @@ st.latex(r""" \epsilon_s' = \frac{c-d'}{c} \cdot 0.003 =""" rf"""{((c-d_prime)/c
 st.text("Calculate compression steel yield strength")
 st.latex(r"f_s' = \epsilon_s' \cdot 200000 = \;" rf"{min(f_yl, ((c-d_prime)/c*0.003) * 2e5):0.3f}" "\; \\text{MPa}" )
 
-st.text("Calculate compression steel")
-st.latex(r"C_s = A_s' \cdot (f_s'-0.85 \cdot f_c) = \;")
+# st.text("Calculate compression steel")
+# st.latex(r"C_s = A_s' \cdot (f_s'-0.85 \cdot f_c) = \;")
 
 st.latex(r"M_n = C_c \cdot (d - a/2) + C_s \cdot (d-d') = \;" rf"{beamDesign/1e6:0.3f}" "\; \\text{kN-m}")
 
