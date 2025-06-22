@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib as plt
 import pandas as pd
 import streamlit as st
 from Functions import CheckBeamDesign, CheckBeamDouble, Asmin1, Asmin2
