@@ -1,24 +1,5 @@
 import numpy as np
 
-def ReductionFactor(
-        epsilon_s: float,
-        epsilon_y: float):
-    if epsilon_s > epsilon_y + 0.003:
-        phi = 0.9
-    elif epsilon_s < epsilon_y + 0.003 and epsilon_s > epsilon_y:
-        phi = 0.65+0.25*(epsilon_s-epsilon_y)/0.003
-    elif epsilon_s <= epsilon_y:
-        phi = 0.65
-
-    # if epsilon_s <= epsilon_y:
-    #     phi = 0.65
-    # elif epsilon_s > epsilon_y and epsilon_s < epsilon_y + 0.003:
-    #     phi = 0.65 + 0.25 * (epsilon_s-epsilon_y)/0.003
-    # else:
-    #     phi = 0.65
-
-        return phi
-
 def epsilonPrime(
         c: float,
         d_prime: float):
