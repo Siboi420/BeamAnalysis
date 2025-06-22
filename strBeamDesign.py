@@ -1,10 +1,9 @@
 import numpy as np
-import pandas as pd
 import streamlit as st
-from Functions import CheckBeamDesign, CheckBeamDouble, Asmin1, Asmin2
+from Functions import *
 
 
-st.sidebar.title("Beam Design")
+st.title("Beam Design")
 
 st.sidebar.header("Material Properties")
 
@@ -97,7 +96,7 @@ utilisation = CheckBeamDouble(
     b = b,
     beta_1 = beta_1)
 
-while utilisation > 0.03:
+while utilisation > 0.02:
     c += 1
     utilisation = CheckBeamDouble(
     c = c,
@@ -108,8 +107,8 @@ while utilisation > 0.03:
     A_smin = A_smin,
     b = b,
     beta_1 = beta_1)
-    if utilisation < 0.03:
-        print(c)
+    if utilisation < 0.02:
+        break
 
 beamDesign = CheckBeamDesign(
     c = c,
@@ -123,7 +122,20 @@ beamDesign = CheckBeamDesign(
     dt = dt,
     cover = p,
     beta_1 = beta_1)
-    
+
+##################################################### 
+# Function Assign
+#####################################################
+
+epsilon_s_prime = epsilonPrime(c, d_prime)
+
+f_s_prime = fPrime(f_yl, epsilon_s_prime)
+
+Cs = Csteel(A_s, A_smin, f_s_prime, f_c)
+
+Cc = Cconcrete(f_c, b, beta_1, c)
+
+T = Tsteel(A_s, f_yl)
 
 ##################################################### 
 # Strealit Configuration
@@ -147,7 +159,7 @@ elif f_c <= 28:
 
 st.subheader("Calculating " r"$A_{s,min}$")
 
-st.text("According to ACI Code, minimum reinforcement shall be calculated as below: ")
+st.write("According to ACI Code, minimum reinforcement shall be calculated as below: ")
 
 r'''
 $$
@@ -161,15 +173,15 @@ A_{s,min} = \; \text{Greater of}
 $$
 '''
 
-st.text("We acquire the minimum area value as: ")
+st.write("We acquire the minimum area value as: ")
 r'''$$ A_{s.min1} = $$''' rf'''{A_smin1:.03f}''' ''' $$\; \\text{mm}^2 $$'''
 r'''$$ A_{s.min2} = $$''' rf'''{A_smin2:.03f}''' ''' $$\; \\text{mm}^2 $$'''
 
-st.text("Therefore the required minimum area of steel is:")
+st.write("Therefore the required minimum area of steel is:")
 st.latex(r''' A_{s,min} = ''' rf''' {A_smin:.3f} ''' ''' \; \\text{mm}^2 ''') 
 
 st.subheader("Calculate the Required Reinforcement")
-st.text('To calculate the required area of reinforcement steel:')
+st.write('To calculate the required area of reinforcement steel:')
 
 st.latex(r''' A_{s,req} = \frac{0.85 f_c' b}{f_y} \cdot \left( d - \sqrt{d^2 - \frac{2M_u/\phi}{0.85 f_c' b}} \right) =''' rf''' {A_s:0.3f} ''' ''' \; \\text{mm}^2 ''')
 
@@ -179,32 +191,44 @@ if A_s < A_smin:
 elif A_s > A_smin:
     st.latex("\\text{Since }" r"A_{s,req} > A_{s,min} \; \therefore \; A_s = A_{s,req}")
 
-st.text('The amount of bar used')
+st.write('The amount of bar used')
 st.latex(r'n = \frac{A_s \cdot 4}{\pi \cdot d_l^2} \approx \;' rf'{n:.0f}' '\; \\text{bars}')
 st.latex(r'A_{s,use} = n \cdot \frac{1}{4} \cdot \pi \cdot d_l^2  =' rf'{A_suse:0.3f}' '\; \\text{mm}^2')
-st.text(r'Assume for compression steel is equal to')
+st.write(r'Assume for compression steel is equal to')
 st.latex(r"A_s' \geq 0.5A_s")
 
 st.subheader('Section Design Parameter')
 
-st.text('Calculate the concrete stress block')
+st.write('Calculate the concrete stress block')
 st.latex(r''' a = \frac{A_s \cdot f_y}{0.85 \cdot f_c \cdot b} = \;''' rf'''{a:.3f}''' ''' \; \\text{mm} ''')
 
 
-st.text('Calculate the section neutral axis')
+st.write('Calculate the section neutral axis')
 st.latex(r'''c = \frac{a}{\beta_1} = \;''' rf'''{c1:0.3f}''' ''' \; \\text{mm} ''')
 
-st.text('Calculate the steel strain')
+st.write('Calculate the steel strain')
 st.latex(r'\epsilon_s = \frac{d-c}{c} \cdot 0.003 = \;' rf'{epsilon_s:0.5f}')
 
-st.text("Calculate the nominal moment provided by beam with compression reinforcement, assume:")
-st.latex(r'c = \;' rf'{c}' '\; \\text{mm}')
+st.write("Calculate the nominal moment provided by beam with compression reinforcement, assume:")
+st.latex(r'c = \;' rf'{c:0.2f}' '\; \\text{mm}')
 
-st.text("Calculate compression steel strain")
+st.write("Calculate compression steel strain")
 st.latex(r""" \epsilon_s' = \frac{c-d'}{c} \cdot 0.003 =""" rf"""{((c-d_prime)/c*0.003):0.5f} """)
 
-st.text("Calculate compression steel yield strength")
+st.write("Calculate compression steel yield strength")
 st.latex(r"f_s' = \epsilon_s' \cdot 200000 = \;" rf"{min(f_yl, ((c-d_prime)/c*0.003) * 2e5):0.3f}" "\; \\text{MPa}" )
+
+st.write("Calculate compression steel")
+st.latex(r"C_s = A_s' \cdot f_s' - 0.85 \cdot f_c = \;" rf"{Cs:0.3f}" "\; \\text{N}")
+
+st.write("Calculate concrete compression")
+st.latex(r"C_c = 0.85 \cdot f_c \cdot b \cdot \beta_1 \cdot c = \;" rf"{Cc:0.3f}" "\; \\text{N}")
+
+st.write("Calculate steel tension")
+st.latex(r"T = A_s \cdot f_y = \;" rf"{T:0.3f}" "\; \\text{N}")
+
+st.write("Compare the difference of " r"$(C_s + C_c) \; \text{and} \; T \;$" " is less than 3%")
+st.latex(r"\frac{(C_s + C_c) - T}{T} = \;" rf"{utilisation*100:0.2f}" "\%" "< 3 \% \\therefore \\text{Ok}")
 
 st.latex(r"M_n = C_c \cdot (d - a/2) + C_s \cdot (d-d') = \;" rf"{beamDesign/1e6:0.3f}" "\; \\text{kN-m}")
 

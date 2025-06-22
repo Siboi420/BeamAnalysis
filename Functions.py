@@ -1,9 +1,44 @@
 import numpy as np
 
-# def epsilonPrime(
-#     c: float,
-#     d_prime: float,
-# )
+def epsilonPrime(
+    c: float,
+    d_prime: float):
+    epsilon_s_prime = ((c-d_prime)/c*0.003)
+    
+    return epsilon_s_prime
+
+def fPrime(
+        f_yl: float,
+        epsilon_s_prime: float):
+    f_s_prime = min(f_yl, epsilon_s_prime * 2e5)
+
+    return f_s_prime
+
+def Csteel(
+        A_s: float,
+        A_smin: float,
+        f_s_prime: float,
+        f_c: float):
+    
+    Cs = max(A_s/2, A_smin) * (f_s_prime-0.85*f_c)
+
+    return Cs
+
+def Cconcrete(
+        f_c: float,
+        b: float,
+        beta_1: float,
+        c : float):
+    Cc = 0.85 * f_c * b * beta_1 * c
+
+    return Cc
+
+def Tsteel(
+        A_s: float,
+        f_yl: float):
+    T = A_s * f_yl
+
+    return T
 
 def CheckBeamDouble(
         c : float,
