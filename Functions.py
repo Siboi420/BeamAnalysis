@@ -1,8 +1,27 @@
 import numpy as np
 
+def ReductionFactor(
+        epsilon_s: float,
+        epsilon_y: float):
+    if epsilon_s > epsilon_y + 0.003:
+        phi = 0.9
+    elif epsilon_s < epsilon_y + 0.003 and epsilon_s > epsilon_y:
+        phi = 0.65+0.25*(epsilon_s-epsilon_y)/0.003
+    elif epsilon_s <= epsilon_y:
+        phi = 0.65
+
+    # if epsilon_s <= epsilon_y:
+    #     phi = 0.65
+    # elif epsilon_s > epsilon_y and epsilon_s < epsilon_y + 0.003:
+    #     phi = 0.65 + 0.25 * (epsilon_s-epsilon_y)/0.003
+    # else:
+    #     phi = 0.65
+
+        return phi
+
 def epsilonPrime(
-    c: float,
-    d_prime: float):
+        c: float,
+        d_prime: float):
     epsilon_s_prime = ((c-d_prime)/c*0.003)
     
     return epsilon_s_prime
@@ -98,4 +117,7 @@ def Asmin2(
         d: float):
     A_smin2 = 1.4/f_yl * b * d
     return A_smin2
+
+
+
 

@@ -79,7 +79,6 @@ elif epsilon_s <= epsilon_y:
 n = np.ceil(A_s * 4 / (np.pi * dl**2))
 A_suse = n * np.pi * dl**2 * 0.25
 
-
 ##################################################### 
 # Design
 #####################################################
@@ -96,7 +95,7 @@ utilisation = CheckBeamDouble(
     b = b,
     beta_1 = beta_1)
 
-while utilisation > 0.02:
+while utilisation > 0.03:
     c += 1
     utilisation = CheckBeamDouble(
     c = c,
@@ -107,7 +106,7 @@ while utilisation > 0.02:
     A_smin = A_smin,
     b = b,
     beta_1 = beta_1)
-    if utilisation < 0.02:
+    if utilisation < 0.03:
         break
 
 beamDesign = CheckBeamDesign(
@@ -230,5 +229,20 @@ st.latex(r"T = A_s \cdot f_y = \;" rf"{T:0.3f}" "\; \\text{N}")
 st.write("Compare the difference of " r"$(C_s + C_c) \; \text{and} \; T \;$" " is less than 3%")
 st.latex(r"\frac{(C_s + C_c) - T}{T} = \;" rf"{utilisation*100:0.2f}" "\%" "< 3 \% \\therefore \\text{Ok}")
 
+st.write("Calculate nominal beam strength:")
 st.latex(r"M_n = C_c \cdot (d - a/2) + C_s \cdot (d-d') = \;" rf"{beamDesign/1e6:0.3f}" "\; \\text{kN-m}")
+
+st.write("For $\epsilon_s =$ " rf"{epsilon_s:0.5f}" ", $\; \phi =" rf"{phi:0.2f}$")
+st.latex("\phi M_n = " rf"{phi * beamDesign/1e6:0.3f}" "\; \\text{kN-m}")
+
+st.write("The design capacity ration is:")
+
+DCR = M_ue / (phi * beamDesign/1e6)
+
+st.latex(r"DCR = \frac{M_u}{\phi M_n} = \;" rf"{DCR:0.3f}")
+
+if DCR >= 1:
+    st.error("The section is needs to be upgraded")
+elif DCR < 1:
+    st.write("The section is safe")
 
