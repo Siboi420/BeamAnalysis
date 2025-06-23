@@ -66,6 +66,7 @@ def CheckBeamDesign(
         f_yl: float,
         f_c: float,
         A_s: float,
+        A_s_prime: float,
         A_smin: float,
         b: float,
         h: float,
@@ -79,7 +80,7 @@ def CheckBeamDesign(
     d_prime = cover + dt + dl/2
     epsilon_s_prime = ((c-d_prime)/c*0.003)
     f_s_prime = min(f_yl, epsilon_s_prime*2e5)
-    Cs = max(A_s/2, A_smin) * (f_s_prime-0.85*f_c)
+    Cs = max(A_s_prime, A_smin) * (f_s_prime-0.85*f_c)
     Cc = 0.85 * f_c * b * beta_1 * c
     Mn = Cc*(d-a/2) + Cs*(d-d_prime)
 
