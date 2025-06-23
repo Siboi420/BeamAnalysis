@@ -231,7 +231,7 @@ if st.sidebar.button("Calculate"):
         st.latex(r"T = A_s \cdot f_y = \;" rf"{T:0.3f}" "\; \\text{N}")
 
         st.write("Compare the difference of " r"$(C_s + C_c) \; \text{and} \; T \;$" " is less than 3%")
-        st.latex(r"\left| \frac{(C_s + C_c) - T}{T} \right| = \;" rf"{utilisation*100:0.2f}" "\%" "< 3 \% \\therefore \\text{Ok}")
+        st.latex(r"\left| \frac{(C_s + C_c) - T}{T} \right| \cdot 100 = \;" rf"{utilisation*100:0.2f}" "\%" "< 3 \% \\therefore \\text{Ok}")
 
         st.write("Calculate nominal beam strength:")
         st.latex(r"M_n = C_c \cdot (d - a/2) + C_s \cdot (d-d') = \;" rf"{beamDesign/1e6:0.3f}" "\; \\text{kN-m}")
