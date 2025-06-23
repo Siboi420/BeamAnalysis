@@ -123,6 +123,7 @@ if st.sidebar.button("Calculate"):
             f_yl = f_yl,
             f_c = f_c,
             A_s = A_suse,
+            A_s_prime = A_s_prime,
             A_smin = A_smin,
             b = b,
             h = h,
