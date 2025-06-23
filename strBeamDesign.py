@@ -83,6 +83,9 @@ if st.sidebar.button("Calculate"):
         n = np.ceil(A_s * 4 / (np.pi * dl**2))
         A_suse = n * np.pi * dl**2 * 0.25
 
+        n_prime = np.ceil(n/2)
+        A_s_prime = n_prime * np.pi * dl**2 * 0.25
+
         ##################################################### 
         # Design
         #####################################################
@@ -95,6 +98,7 @@ if st.sidebar.button("Calculate"):
             f_yl = f_yl,
             f_c = f_c,
             A_s = A_suse,
+            A_s_prime = A_s_prime,
             A_smin = A_smin,
             b = b,
             beta_1 = beta_1)
@@ -107,6 +111,7 @@ if st.sidebar.button("Calculate"):
             f_yl = f_yl,
             f_c = f_c,
             A_s = A_suse,
+            A_s_prime = A_s_prime,
             A_smin = A_smin,
             b = b,
             beta_1 = beta_1)
@@ -198,7 +203,7 @@ if st.sidebar.button("Calculate"):
         st.latex(r'n = \frac{A_s \cdot 4}{\pi \cdot d_l^2} \approx \;' rf'{n:.0f}' '\; \\text{bars}')
         st.latex(r'A_{s,use} = n \cdot \frac{1}{4} \cdot \pi \cdot d_l^2  =' rf'{A_suse:0.3f}' '\; \\text{mm}^2')
         st.write(r'Assume for compression steel is equal to')
-        st.latex(r"A_s' \geq 0.5A_s")
+        st.latex(r"A_s' \geq 0.5A_s = \; " rf"{A_s_prime:0.3f}" "\; \\text{mm}^2")
 
         st.subheader('Section Design Parameter')
 

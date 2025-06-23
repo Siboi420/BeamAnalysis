@@ -15,12 +15,12 @@ def fPrime(
     return f_s_prime
 
 def Csteel(
-        A_s: float,
         A_smin: float,
+        A_s_prime: float,
         f_s_prime: float,
         f_c: float):
     
-    Cs = max(A_s/2, A_smin) * (f_s_prime-0.85*f_c)
+    Cs = max(A_smin, A_s_prime) * (f_s_prime-0.85*f_c)
 
     return Cs
 
@@ -46,13 +46,14 @@ def CheckBeamDouble(
         f_yl: float,
         f_c: float,
         A_s: float,
+        A_s_prime: float,
         A_smin: float,
         b: float,
         beta_1: float):
 
     epsilon_s_prime = ((c-d_prime)/c*0.003)
     f_s_prime = min(f_yl, epsilon_s_prime*2e5)
-    Cs = max(A_s/2, A_smin) * (f_s_prime-0.85*f_c)
+    Cs = max(A_s_prime, A_smin) * (f_s_prime-0.85*f_c)
     Cc = 0.85 * f_c * b * beta_1 * c
     T = A_s * f_yl
     percent = (max((Cs+Cc), T) - min((Cs+Cc), T)) / max((Cs+Cc), T)
