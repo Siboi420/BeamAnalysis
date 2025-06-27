@@ -2,23 +2,32 @@ import numpy as np
 import streamlit as st
 from Functions import *
 
+# Set the width of the layout
+st.html("""
+    <style>
+        .stMainBlockContainer {
+            max-width:58rem;
+        }
+    </style>
+    """
+)
 
 st.title("Beam Design")
 
 st.sidebar.header("Material Properties")
 
-f_c = st.sidebar.number_input("f_c =", value=float(28))
-f_yl = st.sidebar.number_input("f_yl =", value=float(420))
-f_yt = st.sidebar.number_input("f_yt =", value=float(280))
+f_c = st.sidebar.number_input("$f_c$, MPa", value=float(28))
+f_yl = st.sidebar.number_input("$f_{yl}$, MPa", value=float(420))
+f_yt = st.sidebar.number_input("$f_{yt}$, MPa", value=float(280))
 epsilon_y = f_yl/2e5
 
 st.sidebar.header("Beam Dimension")
 
-b = st.sidebar.number_input("Beam Width, b", placeholder="Insert beam width", value=float(250))
-h = st.sidebar.number_input("Beam Height, h", placeholder="Insert beam height", value=float(350))
-p = st.sidebar.number_input("Concrete Cover, p", placeholder="Insert concrete cover", value=float(40))
-dl = st.sidebar.number_input("Longitudinal Bar Diameter, dl", value=float(19))
-dt = st.sidebar.number_input("Transversal Bar Diameter, dt", value=float(10))
+b = st.sidebar.number_input("Beam Width, b (mm)", placeholder="Insert beam width", value=float(250))
+h = st.sidebar.number_input("Beam Height, h (mm)", placeholder="Insert beam height", value=float(350))
+p = st.sidebar.number_input("Concrete Cover, p (mm)", placeholder="Insert concrete cover", value=float(40))
+dl = st.sidebar.number_input("Longitudinal Bar Diameter, dl (mm)", value=float(19))
+dt = st.sidebar.number_input("Transversal Bar Diameter, dt (mm)", value=float(10))
 
 # Applied Moment Acting on the beam #
 
@@ -156,10 +165,9 @@ if st.sidebar.button("Calculate"):
             st.latex(r"""
                     f_c' \geq 55 \; \therefore \; \beta_1 = 0.65
                     """)
-        elif f_c < 55 and f_c > 28 :
-            st.latex(r"""
-                    28 < f_c' < 55 \; \therefore \; \beta_1 = 0.85 - \frac{0.05 \cdot (f_c'-28)}{7}\\
-                    \beta_1 =""" +rf""" {beta_1} """ )
+        elif f_c > 28 and f_c < 55:
+            st.latex(r" 28 < f_c' < 55 \; \therefore \; \beta_1 = 0.85 - \frac{0.05 \cdot (f_c'-28)}{7} ")
+            st.latex(r" \beta_1 = \; 0.85 - \frac{0.05 \cdot (" + str(f_c) + r" - 28)}{7} = "+ str(beta_1) +r" ")
         elif f_c <= 28:
             st.latex(r"""
                     16 \leq f_c' \leq 28 \; \therefore \; \beta_1 = 0.85\\
@@ -183,8 +191,8 @@ if st.sidebar.button("Calculate"):
         '''
 
         st.write("We acquire the minimum area value as: ")
-        r'''$$ A_{s.min1} = $$''' rf'''{A_smin1:.03f}''' ''' $$\; \\text{mm}^2 $$'''
-        r'''$$ A_{s.min2} = $$''' rf'''{A_smin2:.03f}''' ''' $$\; \\text{mm}^2 $$'''
+        st.latex(r" A_{s.min1} = \frac{0.25 \sqrt{"+ str(f_c) +r"}}{"+ str(f_yl) +r"} \cdot "+ str(b) +r" \cdot "+ str(d) +r" = "+ str(round(A_smin1,3)) +r" \; \text{mm}^2 ")
+        st.latex(r" A_{s,min2} = \frac{1.4}{"+ str(f_yl) +r"} \cdot "+ str(b) +r" \cdot "+ str(d) +r" = "+ str(round(A_smin2,3)) +r" \; \text{mm}^2")
 
         st.write("Therefore the required minimum area of steel is:")
         st.latex(r''' A_{s,min} = ''' rf''' {A_smin:.3f} ''' ''' \; \\text{mm}^2 ''') 
@@ -192,58 +200,86 @@ if st.sidebar.button("Calculate"):
         st.subheader("Calculate the Required Reinforcement")
         st.write('To calculate the required area of reinforcement steel:')
 
-        st.latex(r''' A_{s,req} = \frac{0.85 f_c' b}{f_y} \cdot \left( d - \sqrt{d^2 - \frac{2M_u/\phi}{0.85 f_c' b}} \right) =''' rf''' {A_s:0.3f} ''' ''' \; \\text{mm}^2 ''')
+        # Calculating Required A_s
 
+        st.latex(r''' A_{s,req} = \frac{0.85 f_c' b}{f_y} \cdot \left( d - \sqrt{d^2 - \frac{2M_u/\phi}{0.85 f_c' b}} \right) ''')
+        st.latex(r" A_{s,req} =  \frac{0.85 \cdot "+ str(round(f_c,None)) +r" \cdot "+ str(b) +r"}{"+ str(round(f_yl,None)) +r"} \cdot \left( "+ str(d) +r" - \sqrt{"+ str(d) +r"^2 - \frac{2 \cdot "+ str(round(M_ue,None)) +r" \cdot 10^6 / 0.9}{0.85 \cdot "+ str(round(f_c,None)) +r" \cdot "+ str(b) +r"}} \right) = "+ str(round(A_s,3)) +r" \; \text{mm}^2 ")
 
         if A_s < A_smin:
             st.latex("\\text{Since }" r"A_{s,req} < A_{s,min} \; \therefore \; A_s = A_{s,min}")
         elif A_s > A_smin:
             st.latex("\\text{Since }" r"A_{s,req} > A_{s,min} \; \therefore \; A_s = A_{s,req}")
 
+        # Amount of Bars required
+
         st.write('The amount of bar used')
         st.latex(r'n = \frac{A_s \cdot 4}{\pi \cdot d_l^2} \approx \;' rf'{n:.0f}' '\; \\text{bars}')
-        st.latex(r'A_{s,use} = n \cdot \frac{1}{4} \cdot \pi \cdot d_l^2  =' rf'{A_suse:0.3f}' '\; \\text{mm}^2')
+        st.latex(r" A_{s,use} = n \cdot \frac{1}{4} \cdot \pi \cdot d_l^2 = "+ str(round(n)) +r" \cdot \frac{1}{4} \cdot "+ str(round(dl)) +r" = "+ str(round(A_suse,3)) +r" \; \text{mm}^2 ")
+
+        # Assume amount of compression bar
+
         st.write(r'Assume for compression steel is equal to')
         st.latex(r"A_s' \geq 0.5A_s = \; " rf"{A_s_prime:0.3f}" "\; \\text{mm}^2")
 
+        # Section Design
+
         st.subheader('Section Design Parameter')
 
-        st.write('Calculate the concrete stress block')
-        st.latex(r''' a = \frac{A_s \cdot f_y}{0.85 \cdot f_c \cdot b} = \;''' rf'''{a:.3f}''' ''' \; \\text{mm} ''')
+        # Calculate a
 
+        st.write('Calculate the concrete stress block')
+        st.latex(r" a = \frac{A_s \cdot f_y}{0.85 \cdot f_c \cdot b} = \left( \frac{"+ str(round(A_s,3)) +r" \cdot "+ str(round(f_yl)) +r"}{0.85 \cdot "+ str(round(f_c)) +r" \cdot "+ str(b) +r"} \right)= "+ str(round(a,3)) +r"\; \text{mm} ")
+
+        # Calculate c
 
         st.write('Calculate the section neutral axis')
-        st.latex(r'''c = \frac{a}{\beta_1} = \;''' rf'''{c1:0.3f}''' ''' \; \\text{mm} ''')
+        st.latex(r"c = \frac{a}{\beta_1} = \frac{"+ str(round(a,3)) +r"}{"+ str(beta_1) +r"} = \; "+ str(round(c1,3)) +r" \; \text{mm}")
+
+        # Calculate steel strain
 
         st.write('Calculate the steel strain')
-        st.latex(r'\epsilon_s = \frac{d-c}{c} \cdot 0.003 = \;' rf'{epsilon_s:0.5f}')
+        st.latex(r" \epsilon_s = \frac{d-c}{c} \cdot 0.003 = \frac{"+ str(d) +r" - "+ str(round(c1,3))+r"}{"+ str(round(c1,3)) +r"} \cdot 0.003 = "+ str(round(epsilon_s,5)) +r"")
+
+        # Assume the value of c
 
         st.write("Calculate the nominal moment provided by beam with compression reinforcement, assume:")
         st.latex(r'c = \;' rf'{c:0.2f}' '\; \\text{mm}')
 
+        # Calculate steel compression strain
+
         st.write("Calculate compression steel strain")
-        st.latex(r""" \epsilon_s' = \frac{c-d'}{c} \cdot 0.003 =""" rf"""{((c-d_prime)/c*0.003):0.5f} """)
+        st.latex(r" \epsilon_s' = \frac{c-d'}{c} \cdot 0.003 = \frac{"+ str(c) +r" - "+ str(round(d_prime,2))+r"}{"+ str(round(c)) +r"} \cdot 0.003 = "+ str(round(epsilon_s_prime,5)) +r" ")
+
+        # Calculate compression steel yield strength
 
         st.write("Calculate compression steel yield strength")
-        st.latex(r"f_s' = \epsilon_s' \cdot 200000 = \;" rf"{min(f_yl, ((c-d_prime)/c*0.003) * 2e5):0.3f}" "\; \\text{MPa}" )
+        st.latex(r"f_s' = \epsilon_s' \cdot 200000 = \; "+ str(round(epsilon_s_prime,5)) +r" \cdot 200000 = "+ str(round(f_s_prime,3)) +r" \; \text{MPa} " )
+
+        # Calculate Cs
 
         st.write("Calculate compression steel")
-        st.latex(r"C_s = A_s' \cdot f_s' - 0.85 \cdot f_c = \;" rf"{Cs:0.3f}" "\; \\text{N}")
+        st.latex(r"C_s = A_s' \cdot f_s' - 0.85 \cdot f_c = \; "+ str(round(A_s_prime,3))+r" \cdot "+ str(round(f_s_prime,3)) +r" 0.85 \cdot "+ str(round(f_c)) +r" = "+ str(round(Cs,3)) +r" \; \text{N} ")
+
+        # Calculate Cc
 
         st.write("Calculate concrete compression")
-        st.latex(r"C_c = 0.85 \cdot f_c \cdot b \cdot \beta_1 \cdot c = \;" rf"{Cc:0.3f}" "\; \\text{N}")
+        st.latex(r"C_c = 0.85 \cdot f_c \cdot b \cdot \beta_1 \cdot c = \; 0.85 \cdot "+ str(round(f_c)) +r" \cdot "+ str(b) +r" \cdot "+ str(round(beta_1,2)) +r" \cdot "+ str(c) +r" = \; "+ str(round(Cc,3)) +r" \; \text{N} ")
+
+        # Calculate Ts
 
         st.write("Calculate steel tension")
-        st.latex(r"T = A_s \cdot f_y = \;" rf"{T:0.3f}" "\; \\text{N}")
+        st.latex(r"T = A_s \cdot f_y = \; "+ str(round(A_s,3)) +r" \cdot "+ str(f_yl) +r" = \; "+ str(round(T,3)) +r" \; \text{N} ")
 
-        st.write("Compare the difference of " r"$(C_s + C_c) \; \text{and} \; T \;$" " is less than 3%")
-        st.latex(r"\left| \frac{(C_s + C_c) - T}{T} \right| \cdot 100 = \;" rf"{utilisation*100:0.2f}" "\%" "< 3 \% \\therefore \\text{Ok}")
+        # Verify Cs + Cc and T
+
+        st.write("Verify the difference of " r"$(C_s + C_c) \; \text{and} \; T \;$" " is less than 3%")
+        st.latex(r"\left| \frac{(C_s + C_c) - T}{T} \right| \cdot 100\% = \; \left| \frac{("+ str(round(Cs)) +r" + "+ str(round(Cs)) +r") - "+ str(round(T)) +r"}{"+ str(round(T)) +r"} \right| \cdot 100\% = \; "+ str(round(utilisation*100,2))+r"\% < 3 \% \therefore \text{OK}")
 
         st.write("Calculate nominal beam strength:")
-        st.latex(r"M_n = C_c \cdot (d - a/2) + C_s \cdot (d-d') = \;" rf"{beamDesign/1e6:0.3f}" "\; \\text{kN-m}")
+        st.latex(r"M_n = C_c \cdot (d - a/2) + C_s \cdot (d-d') = \; "+ str(round(Cc)) +r" \cdot ("+ str(d) +r" - "+ str(round(a,3)) +r"/2) + "+ str(round(Cs))+r" \cdot ("+ str(d) +r" - "+ str(d_prime) +r") = \; "+ str(round(beamDesign/1e6)) +r" \; \text{kN-m} ")
 
         st.write("For $\epsilon_s =$ " rf"{epsilon_s:0.5f}" ", $\; \phi =" rf"{phi:0.2f}$")
-        st.latex("\phi M_n = " rf"{phi * beamDesign/1e6:0.3f}" "\; \\text{kN-m}")
+        st.latex("\phi M_n = " rf"{round(phi * beamDesign/1e6)}" "\; \\text{kN-m}")
 
         st.write("The design capacity ration is:")
 
