@@ -8,6 +8,7 @@ st.html("""
     <style>
         .stMainBlockContainer {
             max-width:58rem;
+            max-height:10rem;
         }
     </style>
     """
@@ -113,8 +114,8 @@ if st.sidebar.button("Calculate"):
             b = b,
             beta_1 = beta_1)
 
-        while utilisation > 0.005:
-            c += 0.5
+        while utilisation > 0.03:
+            c += 1
             utilisation = CheckBeamDouble(
             c = c,
             d_prime = d_prime,
@@ -125,7 +126,7 @@ if st.sidebar.button("Calculate"):
             A_smin = A_smin,
             b = b,
             beta_1 = beta_1)
-            if utilisation < 0.005:
+            if utilisation < 0.03:
                 break
 
         beamDesign = CheckBeamDesign(
@@ -221,6 +222,7 @@ if st.sidebar.button("Calculate"):
 
         st.write(r'Assume for compression steel is equal to')
         st.latex(r"A_s' \geq 0.5A_s = \; " rf"{A_s_prime:0.3f}" "\; \\text{mm}^2")
+        st.latex(r"\text{number of compression bar, } n' = "+ str(round(n_prime)) +r" ")
 
         # Section Design
 
@@ -239,6 +241,7 @@ if st.sidebar.button("Calculate"):
         # Calculate steel strain
 
         st.write('Calculate the steel strain')
+        st.latex(r"d = "+ str(round(d,3)) +r" \; \text{mm}")
         st.latex(r" \epsilon_s = \frac{d-c}{c} \cdot 0.003 = \frac{"+ str(d) +r" - "+ str(round(c1,3))+r"}{"+ str(round(c1,3)) +r"} \cdot 0.003 = "+ str(round(epsilon_s,5)) +r"")
 
         # Assume the value of c
@@ -259,7 +262,7 @@ if st.sidebar.button("Calculate"):
         # Calculate Cs
 
         st.write("Calculate compression steel")
-        st.latex(r"C_s = A_s' \cdot f_s' - 0.85 \cdot f_c = \; "+ str(round(A_s_prime,3))+r" \cdot "+ str(round(f_s_prime,3)) +r" 0.85 \cdot "+ str(round(f_c)) +r" = "+ str(round(Cs,3)) +r" \; \text{N} ")
+        st.latex(r"C_s = A_s' \cdot f_s' - 0.85 \cdot f_c = \; "+ str(round(A_s_prime,3))+r" \cdot "+ str(round(f_s_prime,3)) +r" - 0.85 \cdot "+ str(round(f_c)) +r" = "+ str(round(Cs,3)) +r" \; \text{N} ")
 
         # Calculate Cc
 
@@ -276,8 +279,8 @@ if st.sidebar.button("Calculate"):
         st.write("Verify the difference of " r"$(C_s + C_c) \; \text{and} \; T \;$" " is less than 3%")
         st.latex(r"""
         \begin{align*}
-        &\left| \frac{(C_s + C_c) - T}{T} \right| \cdot 100\% < 3\% \\ 
-        &\left| \frac{("""+ str(round(Cs)) +r""" + """+ str(round(Cs)) +r""") - """+ str(round(T)) +r"""}{"""+ str(round(T)) +r"""} \right| \cdot 100\% = \; """+ str(round(utilisation*100,2))+r"""\% < 3 \% \therefore \text{OK}
+        \text{difference} &= \left| \frac{(C_s + C_c) - T}{T} \right| \cdot 100\% < 3\% \\ 
+        &= \left| \frac{("""+ str(round(Cs)) +r""" + """+ str(round(Cs)) +r""") - """+ str(round(T)) +r"""}{"""+ str(round(T)) +r"""} \right| \cdot 100\% = \; """+ str(round(utilisation*100,2))+r"""\% < 3 \% \therefore \text{OK}
         \end{align*}
         """)
 
@@ -305,23 +308,35 @@ if st.sidebar.button("Calculate"):
         elif DCR < 1:
             st.write("The section is safe")
 
+        # Section Drawing
+
+        st.write("Section Preview")
+
         xx = np.linspace((p+dt+dl/2), (b-(p+dt+dl/2)), int(n))
         yy = np.repeat((h-d), n)
 
         xx_p = np.linspace((p+dt+dl/2), (b-(p+dt+dl/2)), int(n_prime))
         yy_p = np.repeat((h-d_prime), n_prime)
 
-        fig, ax = plt.subplots(figsize=(5, 5))
+        fig, ax = plt.subplots(figsize=(3,3))
+        ax.set_xticks([])
+        ax.set_yticks([])
         ax.plot(
             [0, b, b, 0, 0],
             [0, 0, h ,h, 0])
-        ax.scatter(xx_p, yy_p)
-        ax.scatter(xx, yy)
+        ax.scatter(xx_p, yy_p, label=r"Compression bar")
+        ax.scatter(xx, yy, label=r"Tension bar")
+        ax.set_xlim(-100, b+50)
+        ax.set_ylim(-100, h+50)
+        ax.legend(loc='lower left', fontsize=5, markerscale=0.5)
 
-        st.pyplot(fig)
+        st.pyplot(fig, use_container_width=False)
 
         xx_dis = (b-2*p - dt*2 - dl) / (n-1)
         xxp_dis = (b-2*p - dt*2 - dl) / (n_prime-1)
 
         st.latex(r"\text{The distance between tension bar is } = "+ str(round(xx_dis,3)) +r" \text{mm}")
         st.latex(r"\text{The distance between compression bar is } = "+ str(round(xxp_dis,3)) +r" \text{mm}")
+
+        st.latex(r"\text{Number of tension reinforcement = } "+ str(round(n)) +r" ")
+        st.latex(r"\text{Number of compression reinforcement = } "+ str(round(n_prime)) +r" ")
