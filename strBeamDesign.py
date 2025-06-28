@@ -1,5 +1,6 @@
 import numpy as np
 import streamlit as st
+import matplotlib.pyplot as plt
 from Functions import *
 
 # Set the width of the layout
@@ -112,8 +113,8 @@ if st.sidebar.button("Calculate"):
             b = b,
             beta_1 = beta_1)
 
-        while utilisation > 0.03:
-            c += 1
+        while utilisation > 0.005:
+            c += 0.5
             utilisation = CheckBeamDouble(
             c = c,
             d_prime = d_prime,
@@ -124,7 +125,7 @@ if st.sidebar.button("Calculate"):
             A_smin = A_smin,
             b = b,
             beta_1 = beta_1)
-            if utilisation < 0.03:
+            if utilisation < 0.005:
                 break
 
         beamDesign = CheckBeamDesign(
@@ -273,10 +274,22 @@ if st.sidebar.button("Calculate"):
         # Verify Cs + Cc and T
 
         st.write("Verify the difference of " r"$(C_s + C_c) \; \text{and} \; T \;$" " is less than 3%")
-        st.latex(r"\left| \frac{(C_s + C_c) - T}{T} \right| \cdot 100\% = \; \left| \frac{("+ str(round(Cs)) +r" + "+ str(round(Cs)) +r") - "+ str(round(T)) +r"}{"+ str(round(T)) +r"} \right| \cdot 100\% = \; "+ str(round(utilisation*100,2))+r"\% < 3 \% \therefore \text{OK}")
+        st.latex(r"""
+        \begin{align*}
+        &\left| \frac{(C_s + C_c) - T}{T} \right| \cdot 100\% < 3\% \\ 
+        &\left| \frac{("""+ str(round(Cs)) +r""" + """+ str(round(Cs)) +r""") - """+ str(round(T)) +r"""}{"""+ str(round(T)) +r"""} \right| \cdot 100\% = \; """+ str(round(utilisation*100,2))+r"""\% < 3 \% \therefore \text{OK}
+        \end{align*}
+        """)
+
+        # Nominal Moment Design
 
         st.write("Calculate nominal beam strength:")
-        st.latex(r"M_n = C_c \cdot (d - a/2) + C_s \cdot (d-d') = \; "+ str(round(Cc)) +r" \cdot ("+ str(d) +r" - "+ str(round(a,3)) +r"/2) + "+ str(round(Cs))+r" \cdot ("+ str(d) +r" - "+ str(d_prime) +r") = \; "+ str(round(beamDesign/1e6)) +r" \; \text{kN-m} ")
+        st.latex(r""" 
+        \begin{align*}
+        M_n &= C_c \cdot (d - a/2) + C_s \cdot (d-d') \\
+        &= """+ str(round(Cc)) +r""" \cdot ("""+ str(d) +r""" - """+ str(round(a,3)) +r"""/2) + """+ str(round(Cs))+r""" \cdot ("""+ str(d) +r""" - """+ str(d_prime) +r""") = \; """+ str(round(beamDesign/1e6)) +r""" \; \text{kN-m} 
+        \end{align*}
+        """)
 
         st.write("For $\epsilon_s =$ " rf"{epsilon_s:0.5f}" ", $\; \phi =" rf"{phi:0.2f}$")
         st.latex("\phi M_n = " rf"{round(phi * beamDesign/1e6)}" "\; \\text{kN-m}")
@@ -292,3 +305,23 @@ if st.sidebar.button("Calculate"):
         elif DCR < 1:
             st.write("The section is safe")
 
+        xx = np.linspace((p+dt+dl/2), (b-(p+dt+dl/2)), int(n))
+        yy = np.repeat((h-d), n)
+
+        xx_p = np.linspace((p+dt+dl/2), (b-(p+dt+dl/2)), int(n_prime))
+        yy_p = np.repeat((h-d_prime), n_prime)
+
+        fig, ax = plt.subplots(figsize=(5, 5))
+        ax.plot(
+            [0, b, b, 0, 0],
+            [0, 0, h ,h, 0])
+        ax.scatter(xx_p, yy_p)
+        ax.scatter(xx, yy)
+
+        st.pyplot(fig)
+
+        xx_dis = (b-2*p - dt*2 - dl) / (n-1)
+        xxp_dis = (b-2*p - dt*2 - dl) / (n_prime-1)
+
+        st.latex(r"\text{The distance between tension bar is } = "+ str(round(xx_dis,3)) +r" \text{mm}")
+        st.latex(r"\text{The distance between compression bar is } = "+ str(round(xxp_dis,3)) +r" \text{mm}")
