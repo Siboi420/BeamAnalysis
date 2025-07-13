@@ -27,9 +27,8 @@ def Csteel(
 def Cconcrete(
         f_c: float,
         b: float,
-        beta_1: float,
-        c : float):
-    Cc = 0.85 * f_c * b * beta_1 * c
+        a: float):
+    Cc = 0.85 * f_c * b * a
 
     return Cc
 
