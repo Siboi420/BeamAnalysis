@@ -95,7 +95,6 @@ st.write("Therefore the required minimum area of steel is:")
 st.latex(r''' A_{s,min} = ''' rf''' {A_smin:.3f} ''' ''' \; \\text{mm}^2 ''') 
 
 st.subheader("Calculate the Required Reinforcement")
-st.write('To calculate the required area of reinforcement steel:')
 
 # Maximum steel reinforcement
 
@@ -180,7 +179,20 @@ st.latex(r"""
 
 if fM_n > M_ue*1e6:
     n = np.ceil(A_smin / (dl**2 * np.pi / 4)) # Rely on the concrete strength, Cc, instead of the steel reinf.
-    n_prime = np.ceil(max(n/2, A_smin / (dl**2 * np.pi / 4)))
+    n_prime = np.ceil(max(n/2, A_smin / (dl**2 * np.pi / 4), 2))
+    A_s = n * dl**2 * np.pi /4
+    A_sp = n_prime * dl**2 * np.pi / 4
+
+    st.write("The design capacity ratio is:")
+
+    st.latex(r"""
+    \begin{align*}
+    \phi M_n &= """+ str(round(fM_n/1e6,3)) +r""" \; \text{kN-m} \\
+    M_u &= """+ str(round(M_ue,3)) +r""" \; \text{kN-m} \\
+    DCR &= \frac{M_u}{\phi M_n} = \frac{"""+ str(round(M_ue,3)) +r"""}{"""+ str(round(fM_n/1e6,3)) +r"""} = """+ str(round(M_ue/(fM_n/1e6),3)) +r"""
+    \end{align*}
+    """)
+
 elif fM_n < M_ue*1e6:
     st.latex(r"""
     \begin{align*}
@@ -192,12 +204,12 @@ elif fM_n < M_ue*1e6:
     st.write("Since the nominal moment is insufficient, compression reinforcement is required to increse the amount of tension reinforcement " \
     "enough to achieve sufficient strength required")
 
-    M_ns = M_ue - (fM_n/1e6)
+    M_ns = M_ue/0.9 - M_n/1e6
 
     st.latex(r"""
              \begin{align*}
-             M_{ns'} &= M_u - \phi M_n\\
-             &= """+ str(round(M_ue,3)) +r""" - """+ str(round(fM_n/1e6,3)) +r""" \\
+             M_{ns'} &= M_u/0.9 - M_n\\
+             &= """+ str(round(M_ue/0.9,3)) +r""" - """+ str(round(M_n/1e6,3)) +r""" \\
              &= """+ str(round(M_ns,3))+r""" \; \text{kN-m}
              \end{align*}
              """)
@@ -220,10 +232,11 @@ elif fM_n < M_ue*1e6:
     st.write("Calculate compression steel yield strength")
     st.latex(r"f_s' = \epsilon_s' \cdot 200000 = \; "+ str(round(epsilon_s_prime,5)) +r" \cdot 200000 = "+ str(round(f_s_prime,3)) +r" \; \text{MPa} " )
 
-    A_sp = round(max((Cs / (f_s_prime-0.85*f_c)),0.5*A_s),3)
+    A_sp = round((Cs / (f_s_prime-0.85*f_c)),3)
     st.latex(r"""
              \begin{align*}
-             A_s' &= \frac{C_s}{f_s'-0.85 \cdot f_c} = \frac{"""+ str(round(Cs,3)) +r"""}{"""+ str(round(f_s_prime,3)) +r""" - 0.85 \cdot """+ str(round(f_c,3)) +r"""} = """+ str(A_sp) +r""" \; \text{mm}^2
+             C_s = (f_s' - 0.85 \cdot f_c) \cdot A_s' \longrightarrow A_s' = \frac{C_s}{f_s'-0.85 \cdot f_c} \\
+             A_s'= \frac{"""+ str(round(Cs,3)) +r"""}{"""+ str(round(f_s_prime,3)) +r""" - 0.85 \cdot """+ str(round(f_c,3)) +r"""} = """+ str(A_sp) +r""" \; \text{mm}^2
              \end{align*}
              """)
 
@@ -240,12 +253,36 @@ elif fM_n < M_ue*1e6:
     st.write("Therefore the amount of tension reinforcement required is ", str(A_s), "$\\text{mm}^2$ and for the compression reinforcement is ", str(A_sp), "$\\text{mm}^2$")
 
     n = np.ceil(A_s / (dl**2*np.pi/4))
-    n_prime = np.ceil(max(((A_sp / (dl**2*np.pi/4))),2))
+    n_prime = np.ceil(max(((A_sp / (dl**2*np.pi/4))),n/2))
+
+    M_n = Cc * (d-a/2) + Cs * (d-d_prime)
+    fM_n = 0.9 * M_n
+
+    st.latex(r"""
+    \begin{align*}
+    M_n &= C_c \cdot \left( d - \frac{a}{2} \right) + C_s \cdot (d-d') \\
+    M_n &= """+str(round(Cc,3))+r""" \cdot \left( """+str(round(d,3))+r""" - \frac{"""+str(round(a,3))+r"""}{2} \right) + """+str(round(Cs,3))+r""" \cdot ("""+str(round(d,3))+r""" - """+str(round(d_prime,3))+r""") = """+str(round(M_n,3))+r""" \; \text{N-mm}\\
+    &= """+str(round(M_n/1e6,3))+r""" \; \text{kN-m}\\
+    \phi M_n &= 0.9 * """+str(round(M_n/1e6,3))+r""" = """+ str(round(fM_n/1e6,3)) +r"""\; \text{kN-m} \\
+    M_u &= """+ str(round(M_ue,3)) +r""" \; \text{kN-m} \\
+    DCR &= \frac{M_u}{\phi M_n} =\frac{"""+ str(round(M_ue,3)) +r"""}{"""+ str(round(fM_n/1e6,3)) +r"""} = """+ str(round(M_ue/(fM_n/1e6),3)) +r"""
+    \end{align*}
+    """)
 
 if A_s >= A_smax:
-    st.error("The reinforcement area, $A_s = "+ str(round(A_s)) +r" \; \text{mm}^2$, exceed the maximum of $A_{s,max} = "+ str(round(A_smax)) +r" \; \text{mm}^2$. Increase the section dimension!")
+    st.error("The reinforcement area $A_s = "+ str(round(A_s)) +r" \; \text{mm}^2$, exceed the maximum of $A_{s,max} = "+ str(round(A_smax)) +r" \; \text{mm}^2$. Increase the section dimension!")
 else: 
     st.write("The section is safe")
+    st.subheader("Reinforcement Limits")
+    st.write("Tension bar check")
+    st.write("$A_s = "+str(round(A_s,3))+r" \; \text{mm}^2 < A_{s,max} = "+str(round(A_smax,3))+r" \; \text{mm}^2 \rightarrow$ The reinforcement is not overcrowded \
+              $A_s = "+str(round(A_s,3))+r" \; \text{mm}^2 > A_{s,min} = "+str(round(A_smin,3))+r" \; \text{mm}^2 \rightarrow$ The reinforcement is sufficient")
+    st.write("Compression bar check")
+    if A_sp < 0.5*A_s:
+        st.write("$A_s' = "+str(round(A_sp,3))+r" \; \text{mm}^2 < 0.5A_s = "+str(round(0.5*A_s,3))+r" \; \text{mm}^2 \rightarrow A_{s,used}' = 0.5A_s = "+str(round(0.5*A_s,3))+r" \; \text{mm}^2$")
+    elif A_sp > 0.5*A_s:
+        st.write("$A_s' = "+str(round(A_sp,3))+r" > 0.5A_s \rightarrow $ The compression bar is sufficient")
+
     # Section Drawing
 
     st.subheader("Section Preview")
