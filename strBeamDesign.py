@@ -20,7 +20,9 @@ st.sidebar.header("Material Properties")
 f_c = st.sidebar.number_input("$f_c$, MPa", value=(28.0))
 f_yl = st.sidebar.number_input("$f_{yl}$, MPa", value=(420.0))
 f_yt = st.sidebar.number_input("$f_{yt}$, MPa", value=(280.0))
+
 epsilon_y = f_yl/2e5
+epsilon_s = 0.005
 
 st.sidebar.header("Beam Dimension")
 
@@ -58,7 +60,7 @@ elif f_c <= 28:
             """)
 
 ##################################################### 
-# Beam Reinforcement Limit
+# Steel Reinforcement Limit
 #####################################################
 
 y = dl + 25
@@ -95,36 +97,24 @@ st.latex(r''' A_{s,min} = ''' rf''' {A_smin:.3f} ''' ''' \; \\text{mm}^2 ''')
 st.subheader("Calculate the Required Reinforcement")
 st.write('To calculate the required area of reinforcement steel:')
 
-n_min = np.ceil(A_smin * 4 / (np.pi * dl**2))
+# Maximum steel reinforcement
 
-rho_bal = (0.85*beta_1*f_c/f_yl)*(600/(600+f_yl)) 
-rho_max = 0.75*rho_bal
-A_smax = rho_max * b * d
-rho_min = A_smin/(b * d)
+A_sbal = 0.85 * f_c * beta_1 * (0.003/(0.003+epsilon_y))*d
+A_smax = 0.75 * A_sbal
 
-##################################################### 
-# Beam Section Parameter
-#####################################################
-epsilon_s = 0.005
-
-A_s = 0.85 * f_c * b / f_yl * (d - np.sqrt(d**2 - (2*M_ue*1e6/0.9)/(0.85*f_c*b)))
-
-if A_s < A_smin:
-    A_s = A_smin
-elif A_s > A_smin:
-    A_s = A_s
-
-if epsilon_s > epsilon_y + 0.003:
-    phi = 0.9
-elif epsilon_s < epsilon_y + 0.003 and epsilon_s > epsilon_y:
-    phi = 0.65+0.25*(epsilon_s-epsilon_y)/0.003
-elif epsilon_s <= epsilon_y:
-    phi = 0.65
-
+st.write("The maximum amount of reinforcment is taken as 75\% of $A_{s,balance}$. which are calculated as:")
+st.latex(r"""
+         \begin{align*}
+         A_{s,balance} &= \frac{1}{f_y} \left(0.85 \cdot f_c' \cdot \beta_1 \cdot \frac{\epsilon_{cu}}{\epsilon_{cu}+\epsilon_y} \cdot d \right) \\
+         &= \frac{1}{"""+ str(round(f_yl,3)) +r"""} \cdot \left(0.85 \cdot """+ str(round(f_c)) +r""" \cdot """+ str(round(beta_1,3)) +r""" \cdot \frac{0.003}{0.003+ """+ str(round(epsilon_y,3)) +r"""} \right) \\
+         &= """+ str(round(A_smax,3)) +r""" \; \text{mm}^2
+         \end{align*}
+         """)
 
 ##################################################### 
 # Design
 #####################################################
+
 # Section Design
 
 st.subheader('Nominal Flexural Strength')
@@ -148,21 +138,6 @@ a = c*beta_1
 st.write('Calculate the concrete stress block')
 st.latex(r" a = c \cdot \beta_1 = "+ str(round(c,3)) +r" \cdot "+ str(round(beta_1,3)) +r" = "+ str(round(a,3)) +r" \; \text{mm}")
 
-
-# beamDesign = CheckBeamDesign(
-#     c = c,
-#     f_yl = f_yl,
-#     f_c = f_c,
-#     A_s = A_suse,
-#     A_s_prime = A_s_prime,
-#     A_smin = A_smin,
-#     b = b,
-#     h = h,
-#     dl = dl,
-#     dt = dt,
-#     cover = p,
-#     beta_1 = beta_1)
-
 ##################################################### 
 # Function Assign
 #####################################################
@@ -172,8 +147,8 @@ Cc = Cconcrete(f_c, b, a)
 st.write("Calculate concrete compression")
 st.latex(r"""
          \begin{align*}
-         C_c &= 0.85 \cdot f_c \cdot b \cdot \beta_1 \cdot c \\
-         &= 0.85 \cdot """+ str(round(f_c)) +r""" \cdot """+ str(b) +r""" \cdot """+ str(round(beta_1,2)) +r""" \cdot """+ str(c) +r""" = \; """+ str(round(Cc,3)) +r""" \; \text{N} \\
+         C_c &= 0.85 \cdot f_c \cdot b \cdot a \\
+         &= 0.85 \cdot """+ str(round(f_c)) +r""" \cdot """+ str(b) +r""" \cdot """+ str(a) +r""" = \; """+ str(round(Cc,3)) +r""" \; \text{N} \\
          \end{align*}
          """)
 
@@ -182,11 +157,11 @@ A_s = Cc / f_yl
 st.write("Calculate te required steel area:")
 st.latex(r"""
         T_s = f_y \cdot A_s \longrightarrow A_s = \frac{T_s}{f_y} \\
-        A_s = \frac{"""+ str(round(Cc,3))+r"""}{"""+ str(round(f_yl)) +r"""} = """+ str(round(A_s)) +r""" \; \text{mm}^2
+        A_s = \frac{"""+ str(round(Cc,3))+r"""}{"""+ str(round(f_yl)) +r"""} = """+ str(round(A_s,3)) +r""" \; \text{mm}^2
         """)
 
 M_n = Cc * (d-a/2)
-fM_n = M_n*phi
+fM_n = M_n*0.9
 st.write("The corresponding nominal moment is: ")
 st.latex(r"""
          \begin{align*}
@@ -204,10 +179,8 @@ st.latex(r"""
          """)
 
 if fM_n > M_ue*1e6:
-    st.write("The section is safe")
-    n = np.ceil(A_smin / (dl**2 * np.pi / 4))
-    n_prime = n
-
+    n = np.ceil(A_smin / (dl**2 * np.pi / 4)) # Rely on the concrete strength, Cc, instead of the steel reinf.
+    n_prime = np.ceil(max(n/2, A_smin / (dl**2 * np.pi / 4)))
 elif fM_n < M_ue*1e6:
     st.latex(r"""
     \begin{align*}
@@ -267,89 +240,86 @@ elif fM_n < M_ue*1e6:
     st.write("Therefore the amount of tension reinforcement required is ", str(A_s), "$\\text{mm}^2$ and for the compression reinforcement is ", str(A_sp), "$\\text{mm}^2$")
 
     n = np.ceil(A_s / (dl**2*np.pi/4))
-    n_prime = np.ceil(A_sp / (dl**2*np.pi/4))
+    n_prime = np.ceil(max(((A_sp / (dl**2*np.pi/4))),2))
 
-    st.write(n, n_prime)
+if A_s >= A_smax:
+    st.error("The reinforcement area, $A_s = "+ str(round(A_s)) +r" \; \text{mm}^2$, exceed the maximum of $A_{s,max} = "+ str(round(A_smax)) +r" \; \text{mm}^2$. Increase the section dimension!")
+else: 
+    st.write("The section is safe")
+    # Section Drawing
+
+    st.subheader("Section Preview")
+
+    # Calculate rebar positions and handle layering
+    xx_dis = (b - 2 * p - dt * 2 - dl) / (n - 1) if n > 1 else 0  # Distance between tension bars
+    layering_required = xx_dis < MINIMUM_SPACING if n > 1 else False
+
+    tension_bars_layer1 = []
+    tension_bars_layer2 = []
+    yy_tension1 = []
+    yy_tension2 = []
+
+    # Compression Bars
+    compression_bars = np.linspace((p+dt+dl/2), (b-(p+dt+dl/2)), int(n_prime)).tolist()
+    yy_compression = np.repeat((h-d_prime), int(n_prime))
+
+    first_bar_position = p + dt + dl/2
+    last_bar_position = b - (p + dt + dl/2)
+    first_layer_spacing = (last_bar_position - first_bar_position)/(np.ceil(n/2)-1) if np.ceil(n/2)>1 else 0 #Spacing of the top bar is dependent on the amount of tension needed.
+
+    if layering_required:
+        num_bars_layer1 = int(np.ceil(n / 2)-1) #Number of Bars in Top layer
+        num_bars_layer2 = int(n - num_bars_layer1)  # Correctly calculates the remaining bars
+        
+        #Layer 1 linspace has same starting position as compression bar
+        xx1 = np.linspace(first_bar_position, last_bar_position, num_bars_layer1) #layer 1 uses a single linspace call
+
+        #Bottom layer uses a linear space, but has correct # of bars and positions within its space.
+        xx2 = np.linspace(first_bar_position,(b - (p + dt + dl / 2)),num_bars_layer2) if num_bars_layer2 >0 else [] #Bottom Layer's left most side will have same first bar position as compression
+        xx2_dis=(b - ((2*p) + (dt*2) + dl))/(num_bars_layer2-1)
+
+        #Convert values to List
+        tension_bars_layer1 = xx1.tolist()
+        tension_bars_layer2 = xx2.tolist()
+
+        #create repeating List
+        yy_tension1= np.repeat((h-d + dl + 25), len(tension_bars_layer1)) if len(tension_bars_layer1) > 0 else []
+        yy_tension2 = np.repeat((h-d), len(tension_bars_layer2)) if len(tension_bars_layer2) > 0 else [] #20 mm assumed here
+
+    else: #NO Layering
+        xx = np.linspace((p+dt+dl/2), (b-(p+dt+dl/2)), int(n))
+        tension_bars_layer1 = xx.tolist()
+        yy_tension1 = np.repeat((h-d), int(n)) #yy_tension can just equal to n since it does not affect the length of another tensor
+
+    fig, ax = plt.subplots(figsize=(3,3))
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.plot(
+        [0, b, b, 0, 0],
+        [0, 0, h ,h, 0])
+
+    # Plot compression bars with positions that don't change
+    ax.scatter(compression_bars, yy_compression, label=r"Compression bar") # Plot Compression
+
+    # Plot tension bars based on layering strategy
+    if layering_required:
+        ax.scatter(tension_bars_layer1, yy_tension1, label=r"Tension bar Layer 2") #Plot layer 1. tension bars (list).
+        ax.scatter(tension_bars_layer2, yy_tension2, label=r"Tension bar Layer 1")
+    else:
+        ax.scatter(tension_bars_layer1, yy_tension1, label=r"Tension bar") #Plot tension bars layer 1
+    ax.set_xlim(-100, b+50)
+    ax.set_ylim(-100, h+50)
+    ax.legend(loc='lower left', fontsize=5, markerscale=0.5)
+    st.pyplot(fig, use_container_width=False)
+
+    if layering_required:
+        st.write("The distance between tension bar is", str(round(xx2_dis,3)), "$\\text{mm}$")
+    else:
+        st.write(r"The distance between tension bar is", str(round(xx_dis,3)),  "$\\text{mm}$") 
+
+    xxp_dis = (b-2*p - dt*2 - dl) / (n_prime-1)
 
 
-
-# if st.sidebar.button("Calculate"):
-#     if f_c <= 0 or f_yl <= 0 or f_yt <= 0 or f_yt <= 0 or b <= 0 or h <= 0 or p <= 0 or dl <= 0 or dt <= 0:
-#         st.error("The input value must no be zero!")
-#     else:  
-
-# Section Drawing
-
-st.write("Section Preview")
-
-# Calculate rebar positions and handle layering
-xx_dis = (b - 2 * p - dt * 2 - dl) / (n - 1) if n > 1 else 0  # Distance between tension bars
-layering_required = xx_dis < MINIMUM_SPACING if n > 1 else False
-
-tension_bars_layer1 = []
-tension_bars_layer2 = []
-yy_tension1 = []
-yy_tension2 = []
-
-# Compression Bars
-compression_bars = np.linspace((p+dt+dl/2), (b-(p+dt+dl/2)), int(n_prime)).tolist()
-yy_compression = np.repeat((h-d_prime), int(n_prime))
-
-first_bar_position = p + dt + dl/2
-last_bar_position = b - (p + dt + dl/2)
-first_layer_spacing = (last_bar_position - first_bar_position)/(np.ceil(n/2)-1) if np.ceil(n/2)>1 else 0 #Spacing of the top bar is dependent on the amount of tension needed.
-
-if layering_required:
-    num_bars_layer1 = int(np.ceil(n / 2)-1) #Number of Bars in Top layer
-    num_bars_layer2 = int(n - num_bars_layer1)  # Correctly calculates the remaining bars
-    
-    #Layer 1 linspace has same starting position as compression bar
-    xx1 = np.linspace(first_bar_position, last_bar_position, num_bars_layer1) #layer 1 uses a single linspace call
-
-    #Bottom layer uses a linear space, but has correct # of bars and positions within its space.
-    xx2 = np.linspace(first_bar_position,(b - (p + dt + dl / 2)),num_bars_layer2) if num_bars_layer2 >0 else [] #Bottom Layer's left most side will have same first bar position as compression
-    xx2_dis=(b - ((2*p) + (dt*2) + (dl*num_bars_layer2)))/(num_bars_layer2-1)
-
-    #Convert values to List
-    tension_bars_layer1 = xx1.tolist()
-    tension_bars_layer2 = xx2.tolist()
-
-    #create repeating List
-    yy_tension1= np.repeat((h-d + dl + 25), len(tension_bars_layer1)) if len(tension_bars_layer1) > 0 else []
-    yy_tension2 = np.repeat((h-d), len(tension_bars_layer2)) if len(tension_bars_layer2) > 0 else [] #20 mm assumed here
-
-else: #NO Layering
-    xx = np.linspace((p+dt+dl/2), (b-(p+dt+dl/2)), int(n))
-    tension_bars_layer1 = xx.tolist()
-    yy_tension1 = np.repeat((h-d), int(n)) #yy_tension can just equal to n since it does not affect the length of another tensor
-
-fig, ax = plt.subplots(figsize=(3,3))
-ax.set_xticks([])
-ax.set_yticks([])
-ax.plot(
-    [0, b, b, 0, 0],
-    [0, 0, h ,h, 0])
-
-# Plot compression bars with positions that don't change
-ax.scatter(compression_bars, yy_compression, label=r"Compression bar") # Plot Compression
-
-# Plot tension bars based on layering strategy
-if layering_required:
-    ax.scatter(tension_bars_layer1, yy_tension1, label=r"Tension bar Layer 2") #Plot layer 1. tension bars (list).
-    ax.scatter(tension_bars_layer2, yy_tension2, label=r"Tension bar Layer 1")
-else:
-    ax.scatter(tension_bars_layer1, yy_tension1, label=r"Tension bar") #Plot tension bars layer 1
-ax.set_xlim(-100, b+50)
-ax.set_ylim(-100, h+50)
-ax.legend(loc='lower left', fontsize=5, markerscale=0.5)
-st.pyplot(fig, use_container_width=False)
-
-if layering_required:
-    st.latex(r"\text{The distance between tension bar is } = "+ str(round(xx2_dis,3)) +r" \text{mm}")
-else:
-    st.latex(r"\text{The distance between tension bar is } = "+ str(round(xx_dis,3)) +r" \text{mm}")
-
-xxp_dis = (b-2*p - dt*2 - dl) / (n_prime-1)
-st.latex(r"\text{The distance between compression bar is } = "+ str(round(xxp_dis,3)) +r" \text{mm}")
-st.latex(r"\text{Number of tension reinforcement = } "+ str(round(n)) +r" ")
-st.latex(r"\text{Number of compression reinforcement = } "+ str(round(n_prime)) +r" ")
+    st.write("The distance between compression bar is =", str(round(xxp_dis,3)), "$\\text{mm}$")
+    st.write("Number of tension reinforcement =", str(round(n)))
+    st.write("Number of compression reinforcement =", str(round(n_prime)))
