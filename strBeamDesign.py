@@ -1,7 +1,6 @@
 import numpy as np
 import streamlit as st
 import matplotlib.pyplot as plt
-from Functions import *
 
 # Set the width of the layout
 st.html("""
@@ -67,8 +66,8 @@ y = dl + 25
 d = h-(p + dt + dl/2)
 d_prime = (p+dt+dl/2)
 
-A_smin1 = Asmin1(f_c, f_yl, b, d)
-A_smin2 = Asmin2(f_yl, b, d)
+A_smin1 = 0.25 * np.sqrt(f_c) / f_yl * b * d
+A_smin2 = 1.4/f_yl * b * d
 A_smin = max(A_smin1, A_smin2)
 
 st.subheader("Calculate " r"$A_{s,min}$")
@@ -109,6 +108,8 @@ st.latex(r"""
          &= """+ str(round(A_smax,3)) +r""" \; \text{mm}^2
          \end{align*}
          """)
+st.write("Therefore the maximum area of reinforcement is:")
+st.latex(r"A_{s,max} = 0.75 \cdot A_{s,balance} = "+str(round(A_smax,3))+r" \; \text{mm}^2") 
 
 ##################################################### 
 # Design
@@ -142,7 +143,7 @@ st.latex(r" a = c \cdot \beta_1 = "+ str(round(c,3)) +r" \cdot "+ str(round(beta
 #####################################################
 
 # Calculate Cc
-Cc = Cconcrete(f_c, b, a)
+Cc = 0.85 * f_c * b * a
 st.write("Calculate concrete compression")
 st.latex(r"""
          \begin{align*}
@@ -224,12 +225,12 @@ elif fM_n < M_ue*1e6:
              """)
 
     # Calculate steel compression strain
-    epsilon_s_prime = epsilonPrime(c, d_prime)
+    epsilon_s_prime = ((c-d_prime)/c*0.003)
     st.write("Calculate compression steel strain")
     st.latex(r" \epsilon_s' = \frac{c-d'}{c} \cdot 0.003 = \frac{"+ str(c) +r" - "+ str(round(d_prime,2))+r"}{"+ str(round(c)) +r"} \cdot 0.003 = "+ str(round(epsilon_s_prime,5)) +r" ")
 
     # Calculate compression steel yield strength
-    f_s_prime = min(fPrime(f_yl, epsilon_s_prime),f_yl)
+    f_s_prime = min(epsilon_s_prime * 2e5,f_yl)
     st.write("Calculate compression steel yield strength")
     st.latex(r"f_s' = \epsilon_s' \cdot 200000 = \; "+ str(round(epsilon_s_prime,5)) +r" \cdot 200000 = "+ str(round(f_s_prime,3)) +r" \; \text{MPa} " )
 
@@ -248,13 +249,16 @@ elif fM_n < M_ue*1e6:
              \end{align*}
              """)
 
-    A_s = round((Ts/f_yl),3)
+    A_srq = round((Ts/f_yl),3)
     st.latex(r"""A_s = \frac{T_s}{f_y} = \frac{"""+ str(round(Ts,3)) +r"""}{"""+ str(round(f_yl,3)) +r"""} = """+ str(round(A_s,3)) +r""" \; \text{mm}^2""") 
 
     st.write("Therefore the amount of tension reinforcement required is ", str(A_s), "$\\text{mm}^2$ and for the compression reinforcement is ", str(A_sp), "$\\text{mm}^2$")
 
-    n = np.ceil(A_s / (dl**2*np.pi/4))
-    n_prime = np.ceil(max(((A_smin / (dl**2*np.pi/4))),2))
+    n = np.ceil(A_srq / (dl**2*np.pi/4))
+    A_s = n * (dl**2*np.pi/4)
+    
+    n_prime = np.ceil(max(((A_sp / (dl**2*np.pi/4))),2))
+    A_sp = n_prime * (dl**2*np.pi/4)
 
     M_n = Cc * (d-a/2) + Cs * (d-d_prime)
     fM_n = 0.9 * M_n
