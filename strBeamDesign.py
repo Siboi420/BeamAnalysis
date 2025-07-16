@@ -179,7 +179,7 @@ st.latex(r"""
          """)
 
 if fM_n > M_ue*1e6:
-    n = np.ceil(A_s / (dl**2 * np.pi / 4)) # Rely on the concrete strength, Cc, instead of the steel reinf.
+    n = np.floor(A_s / (dl**2 * np.pi / 4)) # Rely on the concrete strength, Cc, instead of the steel reinf.
     n_prime = np.ceil(max(2, A_smin / (dl**2 * np.pi / 4), 2))
     A_s = n * dl**2 * np.pi /4
     A_sp = n_prime * dl**2 * np.pi / 4
