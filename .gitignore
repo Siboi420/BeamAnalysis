@@ -1,4 +1,6 @@
 .env/
+.streamlit/
+.devcontainer/
 __pycache__/
 .devcontainer/
 BeamDesign.ipynb
